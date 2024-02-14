@@ -181,6 +181,7 @@ pub fn configure_jni_symbols() -> Result<(), Box<dyn Error>> {
 
 pub fn download_webrtc() -> Result<(), Box<dyn Error>> {
     let dir = scratch::path(SCRATH_PATH);
+    std::fs::create_dir_all(&dir)?;
     let flock = File::create(dir.join(".lock"))?;
     flock.lock_exclusive()?;
 

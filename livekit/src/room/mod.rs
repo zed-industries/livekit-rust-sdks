@@ -14,6 +14,7 @@
 
 use std::{collections::HashMap, fmt::Debug, sync::Arc, time::Duration};
 
+use futures_util::StreamExt;
 use libwebrtc::{
     native::frame_cryptor::EncryptionState,
     prelude::{
@@ -30,9 +31,9 @@ use parking_lot::RwLock;
 pub use proto::DisconnectReason;
 use proto::SignalTarget;
 use thiserror::Error;
+use futures::channel::{mpsc, oneshot};
 use tokio::{
-    sync::{mpsc, oneshot, Mutex as AsyncMutex},
-    task::JoinHandle,
+    sync::{Mutex as AsyncMutex},
 };
 
 use self::e2ee::{manager::E2eeManager, E2eeOptions};
@@ -43,7 +44,7 @@ use crate::{
     rtc_engine::{
         EngineError, EngineEvent, EngineEvents, EngineOptions, EngineResult, RtcEngine,
         SessionStats,
-    },
+    }, runtime::{self, Task},
 };
 
 pub mod e2ee;
@@ -222,7 +223,7 @@ impl Default for RoomOptions {
 }
 
 struct RoomHandle {
-    session_task: JoinHandle<()>,
+    session_task: Task<()>,
     close_emitter: oneshot::Sender<()>,
 }
 
@@ -242,11 +243,11 @@ impl Debug for Room {
 }
 
 impl Room {
-    pub async fn connect(
+pub async fn connect(
         url: &str,
         token: &str,
         options: RoomOptions,
-    ) -> RoomResult<(Self, mpsc::UnboundedReceiver<RoomEvent>)> {
+    ) -> RoomResult<(Self, futures::channel::mpsc::UnboundedReceiver<RoomEvent>)> {
         let e2ee_manager = E2eeManager::new(options.e2ee.clone());
         let (rtc_engine, join_response, engine_events) = RtcEngine::connect(
             url,
@@ -410,7 +411,7 @@ impl Room {
         inner.update_connection_state(ConnectionState::Connected);
 
         let (close_emitter, close_receiver) = oneshot::channel();
-        let session_task = tokio::spawn(inner.clone().room_task(engine_events, close_receiver));
+        let session_task = runtime::spawn(inner.clone().room_task(engine_events, close_receiver));
 
         Ok((
             Self {
@@ -513,7 +514,7 @@ impl RoomSession {
     ) {
         loop {
             tokio::select! {
-                Some(event) = engine_events.recv() => {
+                Some(event) = engine_events.next() => {
                     let debug = format!("{:?}", event);
                     let inner = self.clone();
                     let (tx, rx) = oneshot::channel();
@@ -668,9 +669,9 @@ impl RoomSession {
         let remote_participant = self.get_participant_by_sid(&participant_sid);
 
         if let Some(remote_participant) = remote_participant {
-            tokio::spawn(async move {
+            runtime::spawn(async move {
                 remote_participant.add_subscribed_media_track(track_sid, track, transceiver).await;
-            });
+            }).detach();
         } else {
             // The server should send participant updates before sending a new offer, this should
             // happen

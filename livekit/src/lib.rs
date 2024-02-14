@@ -15,6 +15,7 @@
 pub mod proto;
 mod room;
 mod rtc_engine;
+mod runtime;
 
 pub mod webrtc {
     pub use libwebrtc::*;

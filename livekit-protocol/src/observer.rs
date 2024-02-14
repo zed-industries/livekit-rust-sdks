@@ -19,7 +19,7 @@ use futures_util::{
     task::{Context, Poll},
 };
 use parking_lot::Mutex;
-use tokio::sync::mpsc;
+use futures::channel::mpsc;
 
 #[derive(Clone, Debug)]
 pub struct Dispatcher<T>
@@ -43,13 +43,13 @@ where
     T: Clone,
 {
     pub fn register(&self) -> mpsc::UnboundedReceiver<T> {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = mpsc::unbounded();
         self.senders.lock().push(tx);
         rx
     }
 
     pub fn dispatch(&self, msg: &T) {
-        self.senders.lock().retain(|sender| sender.send(msg.clone()).is_ok());
+        self.senders.lock().retain(|sender| sender.unbounded_send(msg.clone()).is_ok());
     }
 
     pub fn clear(&self) {

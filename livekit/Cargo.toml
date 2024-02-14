@@ -22,6 +22,9 @@ __rustls-tls = ["livekit-api/__rustls-tls"]
 __lk-internal = []
 
 [dependencies]
+async-task = "4.7.0"
+futures = "0.3.30"
+
 livekit-api = { path = "../livekit-api", version = "0.3.0", default-features = false, features = ["signal-client"] }
 libwebrtc = { path = "../libwebrtc", version = "0.3.0" }
 livekit-protocol = { path = "../livekit-protocol", version = "0.3.0" }

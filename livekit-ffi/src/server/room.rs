@@ -14,6 +14,7 @@
 
 use std::{collections::HashSet, slice, sync::Arc, time::Duration};
 
+use futures_util::StreamExt;
 use livekit::prelude::*;
 use parking_lot::Mutex;
 use tokio::{
@@ -100,7 +101,7 @@ impl FfiRoom {
                     // Successfully connected to the room
                     // Forward the initial state for the FfiClient
                     let Some(RoomEvent::Connected { participants_with_tracks }) =
-                        events.recv().await
+                        events.next().await
                     else {
                         unreachable!("Connected event should always be the first event");
                     };
@@ -423,14 +424,14 @@ struct ActualState {
 async fn room_task(
     server: &'static FfiServer,
     inner: Arc<RoomInner>,
-    mut events: mpsc::UnboundedReceiver<livekit::RoomEvent>,
+    mut events: futures::channel::mpsc::UnboundedReceiver<livekit::RoomEvent>,
     mut close_rx: broadcast::Receiver<()>,
 ) {
     let present_state = Arc::new(Mutex::new(ActualState { reconnecting: false }));
 
     loop {
         tokio::select! {
-            Some(event) = events.recv() => {
+            Some(event) = events.next() => {
                 let debug = format!("{:?}", event);
                 let inner = inner.clone();
                 let present_state = present_state.clone();

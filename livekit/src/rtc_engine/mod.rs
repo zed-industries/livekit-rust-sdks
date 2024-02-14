@@ -21,12 +21,13 @@ use parking_lot::{RwLock, RwLockReadGuard};
 use thiserror::Error;
 use tokio::{
     sync::{
-        mpsc, oneshot, Mutex as AsyncMutex, Notify, RwLock as AsyncRwLock,
+         Mutex as AsyncMutex, Notify, RwLock as AsyncRwLock,
         RwLockReadGuard as AsyncRwLockReadGuard,
     },
     task::JoinHandle,
     time::{interval, Interval},
 };
+use futures::channel::{oneshot, mpsc};
 
 pub use self::rtc_session::SessionStats;
 use crate::{
@@ -283,7 +284,7 @@ impl EngineInner {
                         RtcSession::connect(url, token, options.clone()).await?;
                     session.wait_pc_connection().await?;
 
-                    let (engine_tx, engine_rx) = mpsc::unbounded_channel();
+                    let (engine_tx, engine_rx) = mpsc::unbounded();
                     let inner = Arc::new(Self {
                         lk_runtime,
                         engine_tx,
@@ -388,7 +389,7 @@ impl EngineInner {
                 }
             }
             SessionEvent::Data { participant_sid, payload, topic, kind } => {
-                let _ = self.engine_tx.send(EngineEvent::Data {
+                let _ = self.engine_tx.unbounded_send(EngineEvent::Data {
                     participant_sid,
                     payload,
                     topic,
@@ -396,19 +397,19 @@ impl EngineInner {
                 });
             }
             SessionEvent::MediaTrack { track, stream, transceiver } => {
-                let _ = self.engine_tx.send(EngineEvent::MediaTrack { track, stream, transceiver });
+                let _ = self.engine_tx.unbounded_send(EngineEvent::MediaTrack { track, stream, transceiver });
             }
             SessionEvent::ParticipantUpdate { updates } => {
-                let _ = self.engine_tx.send(EngineEvent::ParticipantUpdate { updates });
+                let _ = self.engine_tx.unbounded_send(EngineEvent::ParticipantUpdate { updates });
             }
             SessionEvent::SpeakersChanged { speakers } => {
-                let _ = self.engine_tx.send(EngineEvent::SpeakersChanged { speakers });
+                let _ = self.engine_tx.unbounded_send(EngineEvent::SpeakersChanged { speakers });
             }
             SessionEvent::ConnectionQuality { updates } => {
-                let _ = self.engine_tx.send(EngineEvent::ConnectionQuality { updates });
+                let _ = self.engine_tx.unbounded_send(EngineEvent::ConnectionQuality { updates });
             }
             SessionEvent::RoomUpdate { room } => {
-                let _ = self.engine_tx.send(EngineEvent::RoomUpdate { room });
+                let _ = self.engine_tx.unbounded_send(EngineEvent::RoomUpdate { room });
             }
         }
         Ok(())
@@ -431,7 +432,7 @@ impl EngineInner {
             let _ = close_tx.send(());
             let _ = engine_task.await;
         }
-        let _ = self.engine_tx.send(EngineEvent::Disconnected { reason });
+        let _ = self.engine_tx.unbounded_send(EngineEvent::Disconnected { reason });
     }
 
     /// When waiting for reconnection, it ensures we're always using the latest session.
@@ -536,7 +537,7 @@ impl EngineInner {
             if full_reconnect {
                 if i == 0 {
                     let (tx, rx) = oneshot::channel();
-                    let _ = self.engine_tx.send(EngineEvent::Restarting(tx));
+                    let _ = self.engine_tx.unbounded_send(EngineEvent::Restarting(tx));
                     let _ = rx.await;
                 }
 
@@ -547,14 +548,14 @@ impl EngineInner {
                     log::error!("restarting connection failed: {}", err);
                 } else {
                     let (tx, rx) = oneshot::channel();
-                    let _ = self.engine_tx.send(EngineEvent::Restarted(tx));
+                    let _ = self.engine_tx.unbounded_send(EngineEvent::Restarted(tx));
                     let _ = rx.await;
                     return Ok(());
                 }
             } else {
                 if i == 0 {
                     let (tx, rx) = oneshot::channel();
-                    let _ = self.engine_tx.send(EngineEvent::Resuming(tx));
+                    let _ = self.engine_tx.unbounded_send(EngineEvent::Resuming(tx));
                     let _ = rx.await;
                 }
 
@@ -567,7 +568,7 @@ impl EngineInner {
                     }
                 } else {
                     let (tx, rx) = oneshot::channel();
-                    let _ = self.engine_tx.send(EngineEvent::Resumed(tx));
+                    let _ = self.engine_tx.unbounded_send(EngineEvent::Resumed(tx));
                     let _ = rx.await;
                     return Ok(());
                 }
@@ -610,7 +611,7 @@ impl EngineInner {
         // On SignalRestarted, the room will try to unpublish the local tracks
         // NOTE: Doing operations that use rtc_session will not use the new one
         let (tx, rx) = oneshot::channel();
-        let _ = self.engine_tx.send(EngineEvent::SignalRestarted { join_response, tx });
+        let _ = self.engine_tx.unbounded_send(EngineEvent::SignalRestarted { join_response, tx });
         let _ = rx.await;
 
         new_session.wait_pc_connection().await?;
@@ -636,7 +637,7 @@ impl EngineInner {
         let reconnect_response = session.restart().await?;
 
         let (tx, rx) = oneshot::channel();
-        let _ = self.engine_tx.send(EngineEvent::SignalResumed { reconnect_response, tx });
+        let _ = self.engine_tx.unbounded_send(EngineEvent::SignalResumed { reconnect_response, tx });
 
         // With SignalResumed, the room will send a SyncState message to the server
         let _ = rx.await;
