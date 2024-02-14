@@ -16,12 +16,15 @@ pub mod proto;
 mod room;
 mod rtc_engine;
 mod runtime;
+mod runtime2;
 
 pub mod webrtc {
     pub use libwebrtc::*;
 }
 
 pub use room::*;
+pub use runtime::*;
+pub use runtime2::*;
 
 /// `use livekit::prelude::*;` to import livekit types
 pub mod prelude;

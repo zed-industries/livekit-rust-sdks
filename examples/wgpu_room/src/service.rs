@@ -232,8 +232,9 @@ async fn service_task(inner: Arc<ServiceInner>, mut cmd_rx: mpsc::UnboundedRecei
 
 /// Task basically used to forward room events to the UI.
 /// It will automatically close when the room is disconnected.
-async fn room_task(inner: Arc<ServiceInner>, mut events: mpsc::UnboundedReceiver<RoomEvent>) {
-    while let Some(event) = events.recv().await {
+async fn room_task(inner: Arc<ServiceInner>, mut events: futures::channel::mpsc::UnboundedReceiver<RoomEvent>) {
+    use futures::StreamExt;
+    while let Some(event) = events.next().await {
         let _ = inner.ui_tx.send(UiCmd::RoomEvent { event });
     }
 }

@@ -16,13 +16,13 @@ trait Runtime {
     type JoinHandle;
 }
 
-//sqlx, closed set, inflexible
-enum JoinHandle {
-    #[cfg(tokio)]
-    TokioJoinHandle(),
-    #[cfg(async_std)]
-    AsyncStdJoinHandle(),
-}
+// //sqlx, closed set, inflexible
+// enum JoinHandle {
+//     #[cfg(tokio)]
+//     TokioJoinHandle(),
+//     #[cfg(async_std)]
+//     AsyncStdJoinHandle(),
+// }
 // type JoinHandle =
 
 /// Task is a primitive that allows work to happen in the background.
@@ -99,50 +99,3 @@ where
     Task::Spawned(task)
 }
 
-// Takeaways:
-// - We need ot figure out what to do with livekit options:
-//  -
-// - Schedule a meeting to talk about the executor in LiveKit:
-//  - Why did they choose tokio?
-//  - Is there a way to work with us and their applications?
-//      - with Few or no downsides
-//  - To demonstrate this, we want to make sure that we can:
-//      - run a tokio dispatcher
-//      - Able to use some or replace of their sync primitives
-//      - Make sure tungstenite works -> switch to async_tungestenite
-// -
-//
-//
-// Solution options:
-//  - Stick with a portable subset of the livekit Swift SDK,
-//    and still do the platform bindings ourselves
-
-struct TokioDispatcher {
-    handle: tokio::runtime::Handle,
-}
-
-struct RunnableFuture {
-    runnable: Runnable,
-}
-
-impl Future for RunnableFuture {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.runnable.run() {
-            Poll::Pending
-        } else {
-            Poll::Ready(())
-        }
-    }
-}
-
-impl Dispatcher for TokioDispatcher {
-    fn dispatch(&self, runnable: Runnable) {
-        todo!()
-    }
-
-    fn dispatch_after(&self, duration: Duration, runnable: Runnable) {
-        todo!()
-    }
-}

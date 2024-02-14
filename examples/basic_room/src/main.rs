@@ -9,6 +9,8 @@ use std::env;
 async fn main() {
     env_logger::init();
 
+    livekit::set_global_dispatcher(livekit::TokioDispatcher::new());
+
     let url = env::var("LIVEKIT_URL").expect("LIVEKIT_URL is not set");
     let api_key = env::var("LIVEKIT_API_KEY").expect("LIVEKIT_API_KEY is not set");
     let api_secret = env::var("LIVEKIT_API_SECRET").expect("LIVEKIT_API_SECRET is not set");
@@ -38,7 +40,9 @@ async fn main() {
         .await
         .unwrap();
 
-    while let Some(msg) = rx.recv().await {
+    dbg!("Got to the end!");
+    use futures::StreamExt;
+    while let Some(msg) = rx.next().await {
         log::info!("Event: {:?}", msg);
     }
 }

@@ -1178,6 +1178,7 @@ dependencies = [
  "dashmap",
  "downcast-rs",
  "env_logger",
+ "futures",
  "futures-util",
  "imgproc",
  "lazy_static",
@@ -1197,6 +1198,7 @@ dependencies = [
 name = "livekit-protocol"
 version = "0.3.0"
 dependencies = [
+ "futures",
  "futures-util",
  "parking_lot",
  "pbjson",
