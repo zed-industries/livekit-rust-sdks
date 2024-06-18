@@ -164,3 +164,7 @@ impl Future for Interval {
         })
     }
 }
+
+pub use async_lock::{Mutex, MutexGuard};
+pub use futures::channel::oneshot;
+pub use futures::{Stream, StreamExt};

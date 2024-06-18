@@ -41,3 +41,6 @@ impl<T> Future for TokioJoinHandle<T> {
         }
     }
 }
+
+pub use tokio::sync::{mpsc, oneshot, Mutex, MutexGuard};
+pub use tokio_stream::Stream;

@@ -19,8 +19,7 @@ use std::{
 };
 
 use cxx::SharedPtr;
-use tokio::sync::mpsc;
-use tokio_stream::Stream;
+use livekit_runtime::{mpsc, Stream};
 use webrtc_sys::audio_track as sys_at;
 
 use crate::{audio_frame::AudioFrame, audio_track::RtcAudioTrack};

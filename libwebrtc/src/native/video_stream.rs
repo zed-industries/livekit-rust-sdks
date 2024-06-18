@@ -19,8 +19,7 @@ use std::{
 };
 
 use cxx::{SharedPtr, UniquePtr};
-use tokio::sync::mpsc;
-use tokio_stream::Stream;
+use livekit_runtime::{mpsc, Stream};
 use webrtc_sys::video_track as sys_vt;
 
 use super::video_frame::new_video_frame_buffer;

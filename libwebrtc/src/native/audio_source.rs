@@ -15,8 +15,8 @@
 use std::{sync::Arc, time::Duration};
 
 use cxx::SharedPtr;
-use livekit_runtime::interval;
-use tokio::sync::{
+use livekit_runtime::{
+    interval,
     mpsc::{self, error::TryRecvError},
     Mutex as AsyncMutex,
 };

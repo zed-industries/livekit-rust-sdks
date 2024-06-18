@@ -25,7 +25,7 @@ pub mod native {
         task::{Context, Poll},
     };
 
-    use tokio_stream::Stream;
+    use livekit_runtime::Stream;
 
     use super::stream_imp;
     use crate::{video_frame::BoxVideoFrame, video_track::RtcVideoTrack};

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use cxx::SharedPtr;
-use tokio::sync::oneshot;
+use livekit_runtime::oneshot;
 use webrtc_sys::rtp_receiver as sys_rr;
 
 use crate::{

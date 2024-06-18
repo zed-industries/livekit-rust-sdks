@@ -19,3 +19,6 @@ pub use async_std::*;
 mod dispatcher;
 #[cfg(feature = "dispatcher")]
 pub use dispatcher::*;
+
+#[cfg(any(feature = "dispatcher", feature = "async"))]
+pub mod mpsc;

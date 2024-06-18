@@ -1,10 +1,11 @@
+use futures::Future;
+use futures::FutureExt as _;
 use std::time::Duration;
-pub type JoinHandle<T> = async_std::task::JoinHandle<T>;
-// async_std::future::timeout uses async_io under the hood
+
 pub use async_std::future::timeout;
 pub use async_std::net::TcpStream;
 pub use async_std::task::spawn;
-use futures::{Future, FutureExt, StreamExt};
+pub use async_std::task::JoinHandle;
 pub use std::time::Instant;
 
 /// This is semantically equivalent to Tokio's MissedTickBehavior:
@@ -62,3 +63,7 @@ impl Future for Sleep {
         self.timer.poll_unpin(cx).map(|_| ())
     }
 }
+
+pub use async_lock::{Mutex, MutexGuard};
+pub use futures::channel::oneshot;
+pub use futures::{Stream, StreamExt};
