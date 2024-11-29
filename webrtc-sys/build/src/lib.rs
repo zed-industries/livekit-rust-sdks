@@ -26,7 +26,6 @@ use regex::Regex;
 use reqwest::StatusCode;
 
 pub const SCRATH_PATH: &str = "livekit_webrtc";
-pub const WEBRTC_TAG: &str = "webrtc-dac8015-6";
 pub const IGNORE_DEFINES: [&str; 2] = ["CR_CLANG_REVISION", "CR_XCODE_VERSION"];
 
 pub fn target_os() -> String {
@@ -91,17 +90,33 @@ pub fn prebuilt_dir() -> path::PathBuf {
     path::Path::new(&target_dir).join(format!(
         "livekit/{}-{}/{}",
         webrtc_triple(),
-        WEBRTC_TAG,
+        webrtc_tag(),
         webrtc_triple()
     ))
 }
 
 pub fn download_url() -> String {
-    format!(
-        "https://github.com/livekit/client-sdk-rust/releases/download/{}/{}.zip",
-        WEBRTC_TAG,
-        format!("webrtc-{}", webrtc_triple())
-    )
+    if target_os() == "linux" && target_arch() == "x64" {
+        format!(
+            "https://github.com/zed-industries/webrtc/releases/download/{}/{}.zip",
+            webrtc_tag(),
+            format!("webrtc-{}", webrtc_triple())
+        )
+    } else {
+        format!(
+            "https://github.com/livekit/client-sdk-rust/releases/download/{}/{}.zip",
+            webrtc_tag(),
+            format!("webrtc-{}", webrtc_triple())
+        )
+    }
+}
+
+pub fn webrtc_tag() -> String {
+    if target_os() == "linux" && target_arch() == "x64" {
+        "m114_release_patched".to_string()
+    } else {
+        "webrtc-dac8015-6".to_string()
+    }
 }
 
 /// Used location of libwebrtc depending on whether it's a custom build or not
@@ -189,9 +204,10 @@ pub fn download_webrtc() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let mut resp = reqwest::blocking::get(download_url())?;
+    let url = download_url();
+    let mut resp = reqwest::blocking::get(url.clone())?;
     if resp.status() != StatusCode::OK {
-        return Err(format!("failed to download webrtc: {}", resp.status()).into());
+        return Err(format!("failed to download webrtc from {}: {}", url, resp.status()).into());
     }
 
     let tmp_path = env::var("OUT_DIR").unwrap() + "/webrtc.zip";
