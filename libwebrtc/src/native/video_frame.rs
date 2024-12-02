@@ -271,11 +271,7 @@ impl I420Buffer {
     pub fn to_i420(&self) -> I420Buffer {
         I420Buffer {
             sys_handle: unsafe {
-                // We make a copy of the buffer because internally, when calling ToI420()
-                // if the buffer is of type I420, libwebrtc will reuse the same underlying pointer
-                // for the new created type
-                let copy = vfb_sys::ffi::copy_i420_buffer(&self.sys_handle);
-                let ptr = recursive_cast!(&*copy, i420_to_yuv8, yuv8_to_yuv, yuv_to_vfb);
+                let ptr = recursive_cast!(&*self.sys_handle, i420_to_yuv8, yuv8_to_yuv, yuv_to_vfb);
                 (*ptr).to_i420()
             },
         }
