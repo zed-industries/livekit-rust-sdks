@@ -100,8 +100,8 @@ optional = true
 
 [dependencies.async-tungstenite]
 optional = true
-version = "0.25.0"
-features = ["async-std-runtime", "async-native-tls"]
+version = "0.28"
+features = ["async-std-runtime", "async-tls"]
 
 [dependencies.futures-util]
 version = "0.3"
