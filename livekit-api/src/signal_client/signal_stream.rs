@@ -35,7 +35,7 @@ use async_tungstenite::{
     async_std::connect_async,
     async_std::ClientStream as MaybeTlsStream,
     tungstenite::error::ProtocolError,
-    tungstenite::{Error as WsError, Message},
+    tungstenite::{client::IntoClientRequest, Error as WsError, Message},
     WebSocketStream,
 };
 
@@ -96,7 +96,7 @@ impl SignalStream {
             log::info!("connecting to {}", url);
         }
 
-        let (ws_stream, _) = connect_async(url).await?;
+        let (ws_stream, _) = connect_async(url.to_string().into_client_request()?).await?;
         let (ws_writer, ws_reader) = ws_stream.split();
 
         let (emitter, events) = mpsc::unbounded_channel();
