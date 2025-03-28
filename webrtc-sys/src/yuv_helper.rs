@@ -71,6 +71,17 @@ pub mod ffi {
             height: i32,
         ) -> Result<()>;
 
+        unsafe fn argb_to_nv12(
+            src_argbc: *const u8,
+            src_stride_argb: int,
+            dst_y: *mut u8,
+            dst_stride_y: int,
+            dst_uv: *mut u8,
+            dst_stride_uv: i32,
+            width: i32,
+            height: i32,
+        ) -> Result<()>;
+
         unsafe fn argb_to_i420(
             src_argb: *const u8,
             src_stride_argb: i32,

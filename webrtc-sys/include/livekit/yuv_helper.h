@@ -120,6 +120,10 @@ static void abgr_to_i420(const uint8_t* src_abgr,
                                     dst_stride_v, width, height));
 }
 
+static void argb_to_nv12(const uint8_t *src_argb, int src_stride_argb, uint8_t *dst_y, int dst_stride_y, uint8_t *dst_uv, int dst_stride_uv, int width, int height) {
+    THROW_ON_ERROR(webrtc::ARGBToNV12(src_argb, src_stride_argb, dst_y, dst_stride_y, dst_uv, dst_stride_uv, width, height))
+}
+
 static void argb_to_rgb24(const uint8_t* src_argb,
                           int src_stride_argb,
                           uint8_t* dst_rgb24,
