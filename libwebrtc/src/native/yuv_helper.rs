@@ -290,6 +290,44 @@ pub fn i420_to_nv12(
     }
 }
 
+pub fn argb_to_nv12(
+    src_argbc: &[u8],
+    src_stride_argb: u32,
+    dst_y: &mut [u8],
+    dst_stride_y: u32,
+    dst_uv: &mut [u8],
+    dst_stride_uv: u32,
+    width: i32,
+    height: i32,
+) {
+    // i420_assert_safety(
+    //     src_y,
+    //     src_stride_y,
+    //     src_u,
+    //     src_stride_u,
+    //     src_v,
+    //     src_stride_v,
+    //     width,
+    //     height,
+    // );
+    // nv12_assert_safety(dst_y, dst_stride_y, dst_uv, dst_stride_uv, width, height);
+    // todo!()
+
+    unsafe {
+        yuv_sys::ffi::argb_to_nv12(
+            src_argbc.as_ptr(),
+            src_stride_argb as i32,
+            dst_y.as_mut_ptr(),
+            dst_stride_y as i32,
+            dst_uv.as_mut_ptr(),
+            dst_stride_uv as i32,
+            width,
+            height,
+        )
+        .unwrap();
+    }
+}
+
 pub fn nv12_to_i420(
     src_y: &[u8],
     src_stride_y: u32,
