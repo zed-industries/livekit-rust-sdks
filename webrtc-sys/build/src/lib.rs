@@ -17,7 +17,7 @@ use std::{
     error::Error,
     fs::{self, File},
     io::{self, BufRead, Write},
-    path,
+    path::{self, PathBuf},
     process::Command,
 };
 
@@ -83,11 +83,8 @@ pub fn custom_dir() -> Option<path::PathBuf> {
 }
 
 /// Location of the downloaded webrtc binaries
-/// The reason why we don't use OUT_DIR is because we sometimes need to share the same binaries
-/// across multiple crates without dependencies constraints
-/// This also has the benefit of not re-downloading the binaries for each crate
 pub fn prebuilt_dir() -> path::PathBuf {
-    let target_dir = scratch::path(SCRATH_PATH);
+    let target_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     path::Path::new(&target_dir).join(format!(
         "livekit/{}-{}/{}",
         webrtc_triple(),
