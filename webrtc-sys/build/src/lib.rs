@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use std::{
+    collections::HashMap,
     env,
     error::Error,
     fs::{self, File},
@@ -22,8 +23,10 @@ use std::{
 };
 
 use fs2::FileExt;
+use hex_literal::hex;
 use regex::Regex;
 use reqwest::StatusCode;
+use sha2::{Digest as _, Sha256};
 
 pub const SCRATH_PATH: &str = "livekit_webrtc";
 pub const WEBRTC_TAG: &str = "webrtc-b99fd2c-6";
@@ -191,16 +194,56 @@ pub fn download_webrtc() -> Result<(), Box<dyn Error>> {
         return Err(format!("failed to download webrtc: {}", resp.status()).into());
     }
 
+    let digests = [
+        (
+            "linux-arm64-release",
+            hex!("363d90ed91ffc8fc70c94ad86759876a3255d526ac0792fbf9e9462cac964b81"),
+        ),
+        (
+            "linux-x64-release",
+            hex!("130b37ae8d3ffcdff8ed9347cb482a493075b586cbfaa9ebe1f0079ddb734ff1"),
+        ),
+        (
+            "mac-arm64-release",
+            hex!("b29fed70cfa8282fce1e987b3abf9a471b5d223ddcf03f64282f8d5f0cc89542"),
+        ),
+        (
+            "mac-x64-release",
+            hex!("3f24dc470977d976aa3b72add36dec6822f1da65031b493a67645af1e7aca792"),
+        ),
+        (
+            "win-arm64-release",
+            hex!("69bafa396c4032b06468c396da6a05a431761631f47a1e5d1e8a2cc6c3dd6fe9"),
+        ),
+        (
+            "win-x64-release",
+            hex!("eb7dcc30bc7c3f331acd8648495b420e7f2445f5d8d49ddb755026b2b572495d"),
+        ),
+    ]
+    .into_iter()
+    .collect::<HashMap<_, _>>();
+
     let tmp_path = env::var("OUT_DIR").unwrap() + "/webrtc.zip";
     let tmp_path = path::Path::new(&tmp_path);
-    let mut file = fs::File::options().write(true).read(true).create(true).open(tmp_path)?;
+    let mut file =
+        fs::File::options().write(true).read(true).create(true).truncate(true).open(tmp_path)?;
     resp.copy_to(&mut file)?;
+    let content = std::fs::read(tmp_path)?;
+    let digest = Sha256::digest(&content);
+    if digest.as_slice() != digests[webrtc_triple().as_str()].as_slice() {
+        return Err("corrupt webrtc download".to_owned().into());
+    }
 
-    let mut archive = zip::ZipArchive::new(file)?;
-    archive.extract(webrtc_dir.parent().unwrap())?;
-    drop(archive);
+    let result = (|| {
+        let mut archive = zip::ZipArchive::new(file)?;
+        archive.extract(webrtc_dir.parent().unwrap())?;
+        Ok::<_, Box<dyn Error>>(())
+    })();
+    if result.is_err() {
+        std::fs::remove_dir_all(webrtc_dir).ok();
+    }
+    result?;
 
-    fs::remove_file(tmp_path)?;
     Ok(())
 }
 
