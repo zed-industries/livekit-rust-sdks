@@ -84,8 +84,7 @@ pub fn custom_dir() -> Option<path::PathBuf> {
 
 /// Location of the downloaded webrtc binaries
 pub fn prebuilt_dir() -> path::PathBuf {
-    let target_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
-    path::Path::new(&target_dir).join(format!(
+    PathBuf::from(std::env::var("OUT_DIR").unwrap()).join(format!(
         "livekit/{}-{}/{}",
         webrtc_triple(),
         WEBRTC_TAG,
@@ -133,8 +132,6 @@ pub fn webrtc_defines() -> Vec<(String, Option<String>)> {
 }
 
 pub fn configure_jni_symbols() -> Result<(), Box<dyn Error>> {
-    download_webrtc()?;
-
     let toolchain = android_ndk_toolchain()?;
     let toolchain_bin = toolchain.join("bin");
 
@@ -177,14 +174,8 @@ pub fn configure_jni_symbols() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn download_webrtc() -> Result<(), Box<dyn Error>> {
-    let dir = scratch::path(SCRATH_PATH);
-    let flock = File::create(dir.join(".lock"))?;
-    flock.lock_exclusive()?;
-
     let webrtc_dir = webrtc_dir();
-    if webrtc_dir.exists() {
-        return Ok(());
-    }
+    std::fs::remove_dir_all(&webrtc_dir).ok();
 
     let mut resp = reqwest::blocking::get(download_url())?;
     if resp.status() != StatusCode::OK {
@@ -193,14 +184,14 @@ pub fn download_webrtc() -> Result<(), Box<dyn Error>> {
 
     let tmp_path = env::var("OUT_DIR").unwrap() + "/webrtc.zip";
     let tmp_path = path::Path::new(&tmp_path);
-    let mut file = fs::File::options().write(true).read(true).create(true).open(tmp_path)?;
+    let mut file =
+        fs::File::options().write(true).read(true).create(true).truncate(true).open(tmp_path)?;
     resp.copy_to(&mut file)?;
 
     let mut archive = zip::ZipArchive::new(file)?;
     archive.extract(webrtc_dir.parent().unwrap())?;
     drop(archive);
 
-    fs::remove_file(tmp_path)?;
     Ok(())
 }
 
