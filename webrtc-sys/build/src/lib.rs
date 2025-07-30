@@ -174,7 +174,10 @@ pub fn configure_jni_symbols() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn download_webrtc() -> Result<(), Box<dyn Error>> {
-    let webrtc_dir = webrtc_dir();
+    if custom_dir().is_some() {
+        return Ok(());
+    }
+    let webrtc_dir = prebuilt_dir();
     std::fs::remove_dir_all(&webrtc_dir).ok();
 
     let mut resp = reqwest::blocking::get(download_url())?;
