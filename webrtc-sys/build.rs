@@ -85,8 +85,10 @@ fn main() {
     let webrtc_include = webrtc_dir.join("include");
     let webrtc_lib = webrtc_dir.join("lib");
 
+    println!("cargo:warning=webrtc-sys downloading webrtc to {webrtc_dir:?}");
+    webrtc_sys_build::download_webrtc().unwrap();
     if !webrtc_dir.exists() {
-        webrtc_sys_build::download_webrtc().unwrap();
+        panic!("download_webrtc didn't create webrtc_dir")
     }
 
     builder.includes(&[
