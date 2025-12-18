@@ -69,6 +69,7 @@ impl Stream for NativeAudioStream {
     type Item = AudioFrame<'static>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        log::debug!("frames_in_channel={}", self.frame_rx.len()); // Add this line
         self.frame_rx.poll_recv(cx)
     }
 }
