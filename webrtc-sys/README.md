@@ -1,6 +1,6 @@
 # webrtc-sys
 
-This crate provides wrapper over the WebRTC API for use from Rust.
+This crate provides wrappers over the WebRTC API for use from Rust.
 We use the crate [cxx.rs](https://cxx.rs/) to simplify our bindings.
 
 ## Wrappers
