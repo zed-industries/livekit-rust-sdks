@@ -85,9 +85,8 @@ pub fn custom_dir() -> Option<path::PathBuf> {
 
 /// Location of the downloaded webrtc binaries
 pub fn prebuilt_dir() -> path::PathBuf {
-    path::PathBuf::from(std::env::var("OUT_DIR").unwrap()).join(format!(
-        "livekit/{}-{}/{}",
-        webrtc_triple(),
+    PathBuf::from(std::env::var("OUT_DIR").unwrap()).join(format!(
+        "{}/{}",
         WEBRTC_TAG,
         webrtc_triple()
     ))
@@ -147,6 +146,8 @@ pub fn webrtc_defines() -> Vec<(String, Option<String>)> {
 }
 
 pub fn configure_jni_symbols() -> Result<()> {
+    download_webrtc().context("Failed to download WebRTC binaries for JNI configuration")?;
+
     let toolchain = android_ndk_toolchain().context("Failed to locate Android NDK toolchain")?;
     let toolchain_bin = toolchain.join("bin");
 
@@ -218,6 +219,7 @@ pub fn download_webrtc() -> Result<()> {
     archive.extract(webrtc_dir.parent().unwrap()).context("Failed to extract WebRTC archive")?;
     drop(archive);
 
+    fs::remove_file(&tmp_path).context("Failed to remove temporary WebRTC zip file")?;
     Ok(())
 }
 
