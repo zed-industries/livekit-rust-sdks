@@ -42,12 +42,6 @@ use crate::{http_client, signal_client::signal_stream::SignalStream};
 mod region;
 mod signal_stream;
 
-#[cfg(feature = "signal-client-tokio")]
-pub use tokio_tungstenite::Connector;
-#[cfg(not(feature = "signal-client-tokio"))]
-#[derive(Clone)]
-pub enum Connector {}
-
 pub use region::RegionUrlProvider;
 
 pub type SignalEmitter = mpsc::UnboundedSender<SignalEvent>;
@@ -117,8 +111,6 @@ pub struct SignalOptions {
     pub connect_timeout: Duration,
     /// Custom TLS config
     pub tls_config: TlsConfig,
-    /// Custom TLS connector
-    pub connector: Option<Connector>,
 }
 
 impl Debug for SignalOptions {
@@ -130,7 +122,6 @@ impl Debug for SignalOptions {
             .field("single_peer_connection", &self.single_peer_connection)
             .field("connect_timeout", &self.connect_timeout)
             .field("tls_config", &self.tls_config)
-            .field("connector", &self.connector.is_some())
             .finish()
     }
 }
@@ -144,7 +135,6 @@ impl Default for SignalOptions {
             single_peer_connection: false,
             connect_timeout: SIGNAL_CONNECT_TIMEOUT,
             tls_config: TlsConfig::default(),
-            connector: None,
         }
     }
 }
@@ -312,7 +302,6 @@ impl SignalInner {
             token,
             options.connect_timeout,
             options.tls_config.clone(),
-            options.connector.clone(),
         )
         .await
         {
@@ -349,7 +338,6 @@ impl SignalInner {
                         token,
                         options.connect_timeout,
                         options.tls_config.clone(),
-                        options.connector.clone(),
                     )
                     .await
                     {
@@ -449,7 +437,6 @@ impl SignalInner {
             &token,
             self.options.connect_timeout,
             self.options.tls_config.clone(),
-            self.options.connector.clone(),
         )
         .await?;
         let reconnect_response = get_reconnect_response(&mut events).await?;

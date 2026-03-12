@@ -378,7 +378,6 @@ pub struct RoomOptions {
     pub connect_timeout: Duration,
     /// Custom TLS config
     pub tls_config: TlsConfig,
-    pub connector: Option<livekit_api::signal_client::Connector>,
 }
 
 impl Debug for RoomOptions {
@@ -421,7 +420,6 @@ impl Default for RoomOptions {
             single_peer_connection: false,
             connect_timeout: SIGNAL_CONNECT_TIMEOUT,
             tls_config: TlsConfig::default(),
-            connector: None,
         }
     }
 }
@@ -518,7 +516,6 @@ impl Room {
         signal_options.single_peer_connection = options.single_peer_connection;
         signal_options.connect_timeout = options.connect_timeout;
         signal_options.tls_config = options.tls_config.clone();
-        signal_options.connector = options.connector.clone();
         let (rtc_engine, join_response, engine_events) = RtcEngine::connect(
             url,
             token,

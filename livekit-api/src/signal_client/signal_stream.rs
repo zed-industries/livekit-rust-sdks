@@ -34,7 +34,6 @@ use tokio::{
 
 #[cfg(feature = "signal-client-tokio")]
 use tokio_tungstenite::{
-    connect_async_tls_with_config,
     tungstenite::client::IntoClientRequest,
     tungstenite::error::ProtocolError,
     tungstenite::http::{header::AUTHORIZATION, HeaderValue},
@@ -55,7 +54,7 @@ use async_tungstenite::{
 
 use crate::signal_client::TlsConfig;
 
-use super::{Connector, SignalError, SignalResult};
+use super::{SignalError, SignalResult};
 
 type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -92,9 +91,8 @@ impl SignalStream {
         token: &str,
         connect_timeout: Duration,
         tls_config: TlsConfig,
-        tls_connector: Option<Connector>,
     ) -> SignalResult<(Self, mpsc::UnboundedReceiver<Box<proto::signal_response::Message>>)> {
-        let connect_fut = Self::connect_inner(url, token, tls_config, tls_connector);
+        let connect_fut = Self::connect_inner(url, token, tls_config);
         livekit_runtime::timeout(connect_timeout, connect_fut)
             .await
             .map_err(|_| SignalError::Timeout("signal connection timed out".into()))?
@@ -104,7 +102,6 @@ impl SignalStream {
         url: url::Url,
         token: &str,
         tls_config: TlsConfig,
-        tls_connector: Option<Connector>,
     ) -> SignalResult<(Self, mpsc::UnboundedReceiver<Box<proto::signal_response::Message>>)> {
         log::info!("connecting to {}", url);
         let mut request = url.as_str().into_client_request()?;
