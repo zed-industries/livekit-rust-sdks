@@ -58,7 +58,7 @@ pub mod ffi {
 
         fn ssrc(self: &AudioMixerSourceWrapper) -> i32;
         fn preferred_sample_rate(self: &AudioMixerSourceWrapper) -> i32;
-        fn get_audio_frame_with_info<'a>(
+        unsafe fn get_audio_frame_with_info<'a>(
             self: &AudioMixerSourceWrapper,
             target_sample_rate: i32,
             frame: Pin<&'a mut NativeAudioFrame>,
