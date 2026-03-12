@@ -1,4 +1,4 @@
-// Copyright 2023 LiveKit, Inc.
+// Copyright 2025 LiveKit, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ pub use ffi::AudioFrameInfo;
 pub trait AudioMixerSource {
     fn ssrc(&self) -> i32;
     fn preferred_sample_rate(&self) -> u32;
-    fn get_audio_frame_with_info<'a>(&self, target_sample_rate: u32) -> Option<AudioFrame>;
+    fn get_audio_frame_with_info(&self, target_sample_rate: u32) -> Option<AudioFrame>;
 }
 
 struct AudioMixerSourceImpl<T> {
@@ -45,7 +45,7 @@ impl<T: AudioMixerSource> sys::AudioMixerSource for AudioMixerSourceImpl<T> {
     fn get_audio_frame_with_info<'a>(
         &self,
         target_sample_rate: i32,
-        native_frame: sys::NativeAudioFrame,
+        native_frame: sys::NativeAudioFrame<'a>,
     ) -> AudioFrameInfo {
         if let Some(frame) = self.inner.get_audio_frame_with_info(target_sample_rate as u32) {
             let samples_count = (frame.sample_rate as usize / 100) as usize;

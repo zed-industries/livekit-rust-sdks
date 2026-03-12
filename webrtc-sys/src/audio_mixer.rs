@@ -1,3 +1,17 @@
+// Copyright 2025 LiveKit, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::{pin::Pin, sync::Arc};
 
 use ffi::AudioFrameInfo;
@@ -44,10 +58,10 @@ pub mod ffi {
 
         fn ssrc(self: &AudioMixerSourceWrapper) -> i32;
         fn preferred_sample_rate(self: &AudioMixerSourceWrapper) -> i32;
-        fn get_audio_frame_with_info(
+        fn get_audio_frame_with_info<'a>(
             self: &AudioMixerSourceWrapper,
             target_sample_rate: i32,
-            frame: Pin<&mut NativeAudioFrame>,
+            frame: Pin<&'a mut NativeAudioFrame>,
         ) -> AudioFrameInfo;
     }
 }
@@ -80,10 +94,10 @@ impl AudioMixerSourceWrapper {
         self.source.preferred_sample_rate()
     }
 
-    pub fn get_audio_frame_with_info(
+    pub fn get_audio_frame_with_info<'a>(
         &self,
         target_sample_rate: i32,
-        frame: Pin<&mut ffi::NativeAudioFrame>,
+        frame: Pin<&'a mut ffi::NativeAudioFrame>,
     ) -> AudioFrameInfo {
         self.source.get_audio_frame_with_info(target_sample_rate, frame)
     }
