@@ -71,12 +71,6 @@ git apply "$COMMAND_DIR/patches/add_licenses.patch" -v --ignore-space-change --i
 git apply "$COMMAND_DIR/patches/ssl_verify_callback_with_native_handle.patch" -v --ignore-space-change --ignore-whitespace --whitespace=nowarn
 git apply "$COMMAND_DIR/patches/add_deps.patch" -v --ignore-space-change --ignore-whitespace --whitespace=nowarn
 
-cd build
-
-git apply "$COMMAND_DIR/patches/force_gcc.patch" -v --ignore-space-change --ignore-whitespace --whitespace=nowarn
-
-cd ..
-
 cd third_party
 
 git apply "$COMMAND_DIR/patches/david_disable_gun_source_macro.patch" -v --ignore-space-change --ignore-whitespace --whitespace=nowarn
@@ -86,10 +80,6 @@ cd ../..
 mkdir -p "$ARTIFACTS_DIR/lib"
 
 python3 "./src/build/linux/sysroot_scripts/install-sysroot.py" --arch="$arch"
-
-if [ "$arch" = "arm64" ]; then
-  sudo sed -i 's/__GLIBC_USE_ISOC2X[[:space:]]*1/__GLIBC_USE_ISOC2X\t0/' /usr/aarch64-linux-gnu/include/features.h
-fi
 
 debug="false"
 if [ "$profile" = "debug" ]; then
@@ -119,7 +109,6 @@ args="is_debug=$debug  \
   symbol_level=0 \
   enable_iterator_debugging=false \
   use_rtti=true \
-  is_clang=false \
   rtc_use_x11=true"
 
 # generate ninja files
