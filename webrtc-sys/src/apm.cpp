@@ -19,17 +19,46 @@
 #include "api/audio/builtin_audio_processing_builder.h"
 #include "api/environment/environment_factory.h"
 
-#include <iostream>
 #include <memory>
 
 namespace livekit_ffi {
+
+namespace {
+
+webrtc::AudioProcessing::Config ToWebrtcConfig(
+    const AudioProcessingConfig& c) {
+  webrtc::AudioProcessing::Config out;
+  out.echo_canceller.enabled = c.echo_canceller_enabled;
+  out.high_pass_filter.enabled = c.high_pass_filter_enabled;
+  out.noise_suppression.enabled = c.noise_suppression_enabled;
+
+  auto& g = out.gain_controller2;
+  g.enabled = c.gain_controller2.enabled;
+  g.input_volume_controller.enabled =
+      c.gain_controller2.input_volume_controller_enabled;
+  g.fixed_digital.gain_db = c.gain_controller2.fixed_digital_gain_db;
+
+  auto& ad = g.adaptive_digital;
+  ad.enabled = c.gain_controller2.adaptive_digital.enabled;
+  ad.headroom_db = c.gain_controller2.adaptive_digital.headroom_db;
+  ad.max_gain_db = c.gain_controller2.adaptive_digital.max_gain_db;
+  ad.initial_gain_db = c.gain_controller2.adaptive_digital.initial_gain_db;
+  ad.max_gain_change_db_per_second =
+      c.gain_controller2.adaptive_digital.max_gain_change_db_per_second;
+  ad.max_output_noise_level_dbfs =
+      c.gain_controller2.adaptive_digital.max_output_noise_level_dbfs;
+
+  return out;
+}
+
+}  // namespace
 
 AudioProcessingModule::AudioProcessingModule(
     const AudioProcessingConfig& config) {
   apm_ = webrtc::BuiltinAudioProcessingBuilder()
              .Build(webrtc::CreateEnvironment());
 
-  apm_->ApplyConfig(config.ToWebrtcConfig());
+  apm_->ApplyConfig(ToWebrtcConfig(config));
   apm_->Initialize();
 }
 
@@ -58,15 +87,7 @@ int AudioProcessingModule::set_stream_delay_ms(int delay_ms) {
 }
 
 std::unique_ptr<AudioProcessingModule> create_apm(
-    bool echo_canceller_enabled,
-    bool gain_controller_enabled,
-    bool high_pass_filter_enabled,
-    bool noise_suppression_enabled) {
-  AudioProcessingConfig config;
-  config.echo_canceller_enabled = echo_canceller_enabled;
-  config.gain_controller_enabled = gain_controller_enabled;
-  config.high_pass_filter_enabled = high_pass_filter_enabled;
-  config.noise_suppression_enabled = noise_suppression_enabled;
+    const AudioProcessingConfig& config) {
   return std::make_unique<AudioProcessingModule>(config);
 }
 

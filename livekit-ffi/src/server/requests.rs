@@ -881,7 +881,7 @@ fn on_new_apm(
     server: &'static FfiServer,
     new_apm: proto::NewApmRequest,
 ) -> FfiResult<proto::NewApmResponse> {
-    let apm = apm::AudioProcessingModule::new(
+    let apm = apm::AudioProcessingModule::from_flags(
         new_apm.echo_canceller_enabled,
         new_apm.gain_controller_enabled,
         new_apm.high_pass_filter_enabled,
