@@ -70,7 +70,7 @@ impl PeerConnectionFactory {
             Ok(sys_handle) => Ok(PeerConnection {
                 handle: imp_pc::PeerConnection::configure(sys_handle, observer),
             }),
-            Err(e) => Err(unsafe { sys_err::ffi::RtcError::from(e.what()).into() }),
+            Err(e) => Err(sys_err::ffi::RtcError::from(e.what()).into()),
         }
     }
 

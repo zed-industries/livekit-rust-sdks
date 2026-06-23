@@ -189,7 +189,7 @@ impl PeerConnection {
 
         match res {
             Ok(_) => Ok(()),
-            Err(e) => unsafe { Err(sys_err::ffi::RtcError::from(e.what()).into()) },
+            Err(e) => Err(sys_err::ffi::RtcError::from(e.what()).into()),
         }
     }
 
@@ -313,7 +313,7 @@ impl PeerConnection {
             Ok(sys_handle) => {
                 Ok(DataChannel { handle: imp_dc::DataChannel::configure(sys_handle) })
             }
-            Err(e) => Err(unsafe { sys_err::ffi::RtcError::from(e.what()).into() }),
+            Err(e) => Err(sys_err::ffi::RtcError::from(e.what()).into()),
         }
     }
 
@@ -327,7 +327,7 @@ impl PeerConnection {
 
         match res {
             Ok(sys_handle) => Ok(RtpSender { handle: imp_rs::RtpSender { sys_handle } }),
-            Err(e) => unsafe { Err(sys_err::ffi::RtcError::from(e.what()).into()) },
+            Err(e) => Err(sys_err::ffi::RtcError::from(e.what()).into()),
         }
     }
 
@@ -340,7 +340,7 @@ impl PeerConnection {
 
         match res {
             Ok(sys_handle) => Ok(RtpTransceiver { handle: imp_rt::RtpTransceiver { sys_handle } }),
-            Err(e) => unsafe { Err(sys_err::ffi::RtcError::from(e.what()).into()) },
+            Err(e) => Err(sys_err::ffi::RtcError::from(e.what()).into()),
         }
     }
 
@@ -355,7 +355,7 @@ impl PeerConnection {
             Ok(cxx_handle) => {
                 Ok(RtpTransceiver { handle: imp_rt::RtpTransceiver { sys_handle: cxx_handle } })
             }
-            Err(e) => unsafe { Err(sys_err::ffi::RtcError::from(e.what()).into()) },
+            Err(e) => Err(sys_err::ffi::RtcError::from(e.what()).into()),
         }
     }
 
@@ -404,7 +404,7 @@ impl PeerConnection {
     pub fn remove_track(&self, sender: RtpSender) -> Result<(), RtcError> {
         self.sys_handle
             .remove_track(sender.handle.sys_handle)
-            .map_err(|e| unsafe { sys_err::ffi::RtcError::from(e.what()).into() })
+            .map_err(|e| sys_err::ffi::RtcError::from(e.what()).into())
     }
 
     pub async fn get_stats(&self) -> Result<Vec<RtcStats>, RtcError> {
