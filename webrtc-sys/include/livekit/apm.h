@@ -23,28 +23,25 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/audio_processing/aec3/echo_canceller3.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "rust/cxx.h"
 
 namespace livekit_ffi {
 
-struct AudioProcessingConfig {
-  bool echo_canceller_enabled;
-  bool gain_controller_enabled;
-  bool high_pass_filter_enabled;
-  bool noise_suppression_enabled;
+// Forward declarations so the cxx-generated header below can reference
+// the C++ class while this header in turn pulls in the cxx-generated
+// definitions of `AudioProcessingConfig` and its nested structs.
+class AudioProcessingModule;
+struct AudioProcessingConfig;
 
-  webrtc::AudioProcessing::Config ToWebrtcConfig() const {
-    webrtc::AudioProcessing::Config config;
-    config.echo_canceller.enabled = echo_canceller_enabled;
-    config.gain_controller2.enabled = gain_controller_enabled;
-    config.high_pass_filter.enabled = high_pass_filter_enabled;
-    config.noise_suppression.enabled = noise_suppression_enabled;
-    return config;
-  }
-};
+}  // namespace livekit_ffi
+
+#include "webrtc-sys/src/apm.rs.h"
+
+namespace livekit_ffi {
 
 class AudioProcessingModule {
  public:
-  AudioProcessingModule(const AudioProcessingConfig& config);
+  explicit AudioProcessingModule(const AudioProcessingConfig& config);
 
   int process_stream(const int16_t* src,
                      size_t src_len,
@@ -67,9 +64,6 @@ class AudioProcessingModule {
 };
 
 std::unique_ptr<AudioProcessingModule> create_apm(
-    bool echo_canceller_enabled,
-    bool gain_controller_enabled,
-    bool high_pass_filter_enabled,
-    bool noise_suppression_enabled);
+    const AudioProcessingConfig& config);
 
 }  // namespace livekit_ffi

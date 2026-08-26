@@ -15,6 +15,10 @@
 use cxx::UniquePtr;
 use webrtc_sys::apm::ffi as sys_apm;
 
+pub use webrtc_sys::apm::ffi::{
+    AdaptiveDigitalConfig, AudioProcessingConfig, GainController2Config,
+};
+
 use crate::{RtcError, RtcErrorType};
 
 pub struct AudioProcessingModule {
@@ -22,22 +26,34 @@ pub struct AudioProcessingModule {
 }
 
 impl AudioProcessingModule {
-    pub fn new(
+    /// Constructs an APM from a full config struct.
+    pub fn new(config: AudioProcessingConfig) -> Self {
+        Self { sys_handle: sys_apm::create_apm(&config) }
+    }
+
+    /// Backward-compatible four-flag constructor.
+    ///
+    /// Each flag toggles only the corresponding component's `.enabled`
+    /// field; every other config value stays at WebRTC's default. In
+    /// particular, `gain_controller_enabled = true` does *not* enable
+    /// AGC2's `adaptive_digital` controller, matching the behavior of
+    /// the previous binding. Use [`AudioProcessingModule::new`] with an
+    /// explicit `AudioProcessingConfig` to opt into adaptive gain.
+    pub fn from_flags(
         echo_canceller_enabled: bool,
         gain_controller_enabled: bool,
         high_pass_filter_enabled: bool,
         noise_suppression_enabled: bool,
     ) -> Self {
-        Self {
-            sys_handle: unsafe {
-                sys_apm::create_apm(
-                    echo_canceller_enabled,
-                    gain_controller_enabled,
-                    high_pass_filter_enabled,
-                    noise_suppression_enabled,
-                )
+        Self::new(AudioProcessingConfig {
+            echo_canceller_enabled,
+            gain_controller2: GainController2Config {
+                enabled: gain_controller_enabled,
+                ..Default::default()
             },
-        }
+            high_pass_filter_enabled,
+            noise_suppression_enabled,
+        })
     }
 
     pub fn process_stream(
