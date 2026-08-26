@@ -238,37 +238,21 @@ impl SignalStream {
                             None => {
                                 // Load native root certificates
                                 let mut root_store = rustls::RootCertStore::empty();
-                                match rustls_native_certs::load_native_certs() {
-                                    Ok(certs) => {
-                                        let roots: Vec<rustls::pki_types::CertificateDer> = certs
-                                            .into_iter()
-                                            .map(|cert| {
-                                                rustls::pki_types::CertificateDer::from(cert.0)
-                                            })
-                                            .collect();
-
-                                        for root in roots {
-                                            root_store.add(root).map_err(|e| {
-                                                WsError::Io(io::Error::new(
-                                                    io::ErrorKind::Other,
-                                                    format!(
-                                                        "Failed to parse root certificate: {:?}",
-                                                        e
-                                                    ),
-                                                ))
-                                            })?;
-                                        }
-                                    }
-                                    Err(e) => {
-                                        return Err(WsError::Io(io::Error::new(
+                                let certs_result = rustls_native_certs::load_native_certs();
+                                if let Some(e) = certs_result.errors.first() {
+                                    return Err(WsError::Io(io::Error::new(
+                                        io::ErrorKind::Other,
+                                        format!("Could not load native root certificates: {e}"),
+                                    ))
+                                    .into());
+                                }
+                                for root in certs_result.certs {
+                                    root_store.add(root).map_err(|e| {
+                                        WsError::Io(io::Error::new(
                                             io::ErrorKind::Other,
-                                            format!(
-                                                "Could not load native root certificates: {}",
-                                                e
-                                            ),
+                                            format!("Failed to parse root certificate: {e:?}"),
                                         ))
-                                        .into());
-                                    }
+                                    })?;
                                 }
 
                                 rustls::ClientConfig::builder()
