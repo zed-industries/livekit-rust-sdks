@@ -64,28 +64,75 @@ pub mod ffi {
 }
 
 impl ffi::RtcError {
-    /// # Safety
-    /// The value must be correctly encoded
-    pub unsafe fn from(value: &str) -> Self {
-        // Parse the hex encoded error from c++
-        let error_type = u32::from_str_radix(&value[0..8], 16).unwrap();
-        let error_detail = u32::from_str_radix(&value[8..16], 16).unwrap();
-        let has_scp_cause_code = u8::from_str_radix(&value[16..18], 16).unwrap();
-        let sctp_cause_code = u16::from_str_radix(&value[18..22], 16).unwrap();
-        let message = String::from(&value[22..]); // msg isn't encoded
+    /// Decodes the hex-encoded error produced by the C++ `serialize_error`.
+    ///
+    /// `value` is the `what()` string of a [`cxx::Exception`], which may carry any
+    /// exception that crossed the FFI boundary, not only our serialized errors. When
+    /// `value` is not in the expected format it is surfaced as an [`InternalError`]
+    /// carrying the raw message instead of panicking.
+    ///
+    /// [`InternalError`]: ffi::RtcErrorType::InternalError
+    pub fn from(value: &str) -> Self {
+        Self::parse(value).unwrap_or_else(|| Self {
+            error_type: ffi::RtcErrorType::InternalError,
+            error_detail: ffi::RtcErrorDetailType::None,
+            has_sctp_cause_code: false,
+            sctp_cause_code: 0,
+            message: value.to_string(),
+        })
+    }
 
-        Self {
-            error_type: std::mem::transmute(error_type),
-            error_detail: std::mem::transmute(error_detail),
+    fn parse(value: &str) -> Option<Self> {
+        let error_type = u32::from_str_radix(value.get(0..8)?, 16).ok()?;
+        let error_detail = u32::from_str_radix(value.get(8..16)?, 16).ok()?;
+        let has_sctp_cause_code = u8::from_str_radix(value.get(16..18)?, 16).ok()?;
+        let sctp_cause_code = u16::from_str_radix(value.get(18..22)?, 16).ok()?;
+        let message = value.get(22..)?; // msg isn't encoded
+
+        Some(Self {
+            error_type: error_type_from_repr(error_type)?,
+            error_detail: error_detail_from_repr(error_detail)?,
             sctp_cause_code,
-            has_sctp_cause_code: has_scp_cause_code == 1,
-            message,
-        }
+            has_sctp_cause_code: has_sctp_cause_code == 1,
+            message: message.to_string(),
+        })
     }
 
     pub fn ok(&self) -> bool {
         self.error_type == ffi::RtcErrorType::None
     }
+}
+
+fn error_type_from_repr(value: u32) -> Option<ffi::RtcErrorType> {
+    Some(match value {
+        0 => ffi::RtcErrorType::None,
+        1 => ffi::RtcErrorType::UnsupportedOperation,
+        2 => ffi::RtcErrorType::UnsupportedParameter,
+        3 => ffi::RtcErrorType::InvalidParameter,
+        4 => ffi::RtcErrorType::InvalidRange,
+        5 => ffi::RtcErrorType::SyntaxError,
+        6 => ffi::RtcErrorType::InvalidState,
+        7 => ffi::RtcErrorType::InvalidModification,
+        8 => ffi::RtcErrorType::NetworkError,
+        9 => ffi::RtcErrorType::ResourceExhausted,
+        10 => ffi::RtcErrorType::InternalError,
+        11 => ffi::RtcErrorType::OperationErrorWithData,
+        _ => return None,
+    })
+}
+
+fn error_detail_from_repr(value: u32) -> Option<ffi::RtcErrorDetailType> {
+    Some(match value {
+        0 => ffi::RtcErrorDetailType::None,
+        1 => ffi::RtcErrorDetailType::DataChannelFailure,
+        2 => ffi::RtcErrorDetailType::DtlsFailure,
+        3 => ffi::RtcErrorDetailType::FingerprintFailure,
+        4 => ffi::RtcErrorDetailType::SctpFailure,
+        5 => ffi::RtcErrorDetailType::SdpSyntaxError,
+        6 => ffi::RtcErrorDetailType::HardwareEncoderNotAvailable,
+        7 => ffi::RtcErrorDetailType::HardwareEncoderError,
+        _ => return None,
+    })
 }
 
 impl Error for ffi::RtcError {}
@@ -113,7 +160,7 @@ mod tests {
     #[test]
     fn serialize_deserialize() {
         let str = ffi::serialize_deserialize();
-        let error = unsafe { RtcError::from(&str) };
+        let error = RtcError::from(&str);
 
         assert_eq!(error.error_type, RtcErrorType::InternalError);
         assert_eq!(error.error_detail, RtcErrorDetailType::DataChannelFailure);
@@ -125,7 +172,7 @@ mod tests {
     #[test]
     fn throw_error() {
         let exc: cxx::Exception = ffi::throw_error().err().unwrap();
-        let error = unsafe { RtcError::from(exc.what()) };
+        let error = RtcError::from(exc.what());
 
         assert_eq!(error.error_type, RtcErrorType::InvalidModification);
         assert_eq!(error.error_detail, RtcErrorDetailType::None);

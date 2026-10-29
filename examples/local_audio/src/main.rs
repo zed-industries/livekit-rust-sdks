@@ -43,7 +43,7 @@ impl EchoCancellationProcessor {
         auto_gain_control: bool,
         sample_rate: u32,
     ) -> Self {
-        let apm = AudioProcessingModule::new(
+        let apm = AudioProcessingModule::from_flags(
             echo_cancellation,
             auto_gain_control,
             false, // high_pass_filter - keep disabled for compatibility

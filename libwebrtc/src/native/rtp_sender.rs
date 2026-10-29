@@ -78,6 +78,6 @@ impl RtpSender {
     pub fn set_parameters(&self, parameters: RtpParameters) -> Result<(), RtcError> {
         self.sys_handle
             .set_parameters(parameters.into())
-            .map_err(|e| unsafe { sys_err::ffi::RtcError::from(e.what()).into() })
+            .map_err(|e| sys_err::ffi::RtcError::from(e.what()).into())
     }
 }
